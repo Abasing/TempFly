@@ -74,58 +74,62 @@ public class TempFly extends JavaPlugin {
 		return gui;
 	}
 	
-	@Override
-	public void onEnable() {
-		Console.setLogger(this.getLogger());
-		
-		Files.createFiles(this);
-		V.loadValues();
-		
-		try {
-			this.bridge   = new DataBridge(this);
-		} catch (IOException | SQLException e1) {
-			e1.printStackTrace();
-			getServer().getPluginManager().disablePlugin(this);
-			return;
-		}
-		
-		tfApi = new TempFlyAPI(this);
-		this.flight   = new FlightManager(this);
-		this.time     = new TimeManager(this);
-		this.hooks    = new HookManager(this);
-		this.commands = new CommandManager(this);
-		this.gui      = new GuiManager(this);
-		
-		hooks.loadInternalGenres();
-		initializeGui();
-		initializeAesthetics();
+@Override
+public void onEnable() {
+    Console.setLogger(this.getLogger());
 
-		
-		try {
-			Metrics metrics = new Metrics(this, 8196);
-			// Hooks
-	        metrics.addCustomChart(new Metrics.DrilldownPie("gamemode_hooks", () -> {
-	            Map<String, Map<String, Integer>> map = new HashMap<>();
-	            Map<String, Integer> entry = new HashMap<>();
-	            
-	            for (TempFlyHook hook: hooks.getEnabled()) {
-	            	entry.put(hook.getHookedPlugin(), 1);
-	            	map.put(hook.getHookedPlugin(), entry);
-	            }
-	            if (map.size() == 0) {
-	            	entry.put("No Hooks", 1);
-	            	map.put("No Hooks", entry);
-	            }
-	            return map;
-	        }));
-		} catch (Exception e) {e.printStackTrace();}
-		
-		autosave = new AutoSave(bridge).runTaskTimerAsynchronously(this, V.save * 20 * 60, V.save * 20 * 60);
-		
-		// Support "/reload"
-		for (Player p: Bukkit.getOnlinePlayers()) {
-			flight.addUser(p);
-		}
+    Files.createFiles(this);
+    V.loadValues();
+
+    try {
+        this.bridge = new DataBridge(this);
+    } catch (IOException | SQLException e1) {
+        e1.printStackTrace();
+        getServer().getPluginManager().disablePlugin(this);
+        return;
+    }
+
+    tfApi = new TempFlyAPI(this);
+    this.flight = new FlightManager(this);
+    this.time = new TimeManager(this);
+    this.hooks = new HookManager(this);
+    this.commands = new CommandManager(this);
+    this.gui = new GuiManager(this);
+
+    hooks.loadInternalGenres();
+    initializeGui();
+    initializeAesthetics();
+
+    // Register teleport listener
+    Bukkit.getPluginManager().registerEvents(new TeleportListener(this), this);
+
+    try {
+        Metrics metrics = new Metrics(this, 8196);
+        metrics.addCustomChart(new Metrics.DrilldownPie("gamemode_hooks", () -> {
+            Map<String, Map<String, Integer>> map = new HashMap<>();
+            Map<String, Integer> entry = new HashMap<>();
+
+            for (TempFlyHook hook : hooks.getEnabled()) {
+                entry.put(hook.getHookedPlugin(), 1);
+                map.put(hook.getHookedPlugin(), entry);
+            }
+            if (map.size() == 0) {
+                entry.put("No Hooks", 1);
+                map.put("No Hooks", entry);
+            }
+            return map;
+        }));
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+
+    autosave = new AutoSave(bridge).runTaskTimerAsynchronously(this, V.save * 20 * 60, V.save * 20 * 60);
+
+    // Support "/reload"
+    for (Player p : Bukkit.getOnlinePlayers()) {
+        flight.addUser(p);
+    }
+
 	}
 	
 	private void initializeAesthetics() {
@@ -193,3 +197,4 @@ public class TempFly extends JavaPlugin {
 	}
 	
 }
+
